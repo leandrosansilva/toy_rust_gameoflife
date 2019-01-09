@@ -166,10 +166,56 @@ mod tests {
 
         assert_eq!(ic2.alive, expected);
     }
+
+    #[test]
+    fn window_of_an_empty_world() {
+        let mut world = World::new();
+        world.finish();
+
+        let mut cells = std::vec::Vec::new();
+        let window = Window::new(0, 0, 3, 4);
+
+        world.live_cells(&window, &mut cells);
+
+        assert_eq!(cells.len(), 0);
+    }
+
+    #[test]
+    fn windows_of_one_cell_world() {
+        let mut world = World::new();
+        world.make_alive(Coord(2, 0));
+        world.make_alive(Coord(1, 1));
+        world.make_alive(Coord(3, 1));
+        world.make_alive(Coord(0, 2));
+        world.make_alive(Coord(2, 2));
+        world.make_alive(Coord(2, 3));
+        world.make_alive(Coord(4, 2));
+        world.make_alive(Coord(5, 1));
+        world.make_alive(Coord(4, 4));
+        world.make_alive(Coord(2, 5));
+        world.make_alive(Coord(42, 3));
+        world.make_alive(Coord(3, 42));
+        world.finish();
+
+        let window = Window::new(2, 1, 3, 4);
+
+        let mut cells: std::vec::Vec<Coord> = std::vec::Vec::new();
+        world.live_cells(&window, &mut cells);
+
+        let expected = vec![
+            Coord(2, 2),
+            Coord(2, 3),
+            Coord(3, 1),
+            Coord(4, 2),
+            Coord(4, 4),
+        ];
+
+        assert_eq!(cells, expected);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy)]
-struct Coord(i64, i64);
+pub struct Coord(pub i64, pub i64);
 
 type Neighboors = smallvec::SmallVec<[Coord; 8]>;
 
@@ -225,7 +271,7 @@ impl InterestingCells {
         alive.into_iter().for_each(|c| {
             let count = self.live_neighboors(*c).len();
 
-            if mutate(CellState::Alive, count as u8) == CellState::Alive {
+            if mutate(CellState::Alive, count) == CellState::Alive {
                e.make_alive(*c);
             }
         });
@@ -233,12 +279,111 @@ impl InterestingCells {
         dead.into_iter().for_each(|c| {
             let count = self.live_neighboors(*c).len();
 
-            if mutate(CellState::Dead, count as u8) == CellState::Alive {
+            if mutate(CellState::Dead, count) == CellState::Alive {
                e.make_alive(*c);
             }
         });
 
         e.finish();
+    }
+}
+
+pub struct Window {
+    pub w : usize,
+    pub h: usize,
+    pub x: i64,
+    pub y: i64
+}
+
+impl Window {
+    pub fn new(x: i64, y: i64, w: usize, h: usize) -> Self {
+        Window{w: w, h: h, x: x, y: y}
+    }
+}
+
+pub struct World {
+    set1: InterestingCells,
+    set2: InterestingCells,
+    using_set1: bool
+}
+
+pub trait CellStorage {
+    fn add_cell(&mut self, cell: Coord);
+}
+
+impl CellStorage for std::vec::Vec<Coord> {
+    fn add_cell(&mut self, cell: Coord) {
+        self.push(cell);
+    }
+}
+
+impl World {
+    pub fn new() -> World {
+        World {
+            set1: InterestingCells::new(),
+            set2: InterestingCells::new(),
+            using_set1: true
+        }
+    }
+
+    fn current_set(&self) -> &InterestingCells {
+        if self.using_set1 {
+            &self.set1
+        } else {
+            &self.set2
+        }
+    }
+
+    fn working_sets<'a>(&'a mut self) -> (&'a mut InterestingCells, &'a mut InterestingCells) {
+        if self.using_set1 {
+            (&mut self.set1, &mut self.set2)
+        } else {
+            (&mut self.set2, &mut self.set1)
+        }
+    }
+
+    pub fn make_alive(&mut self, c: Coord) {
+        self.working_sets().0.make_alive(c);
+    }
+
+    pub fn finish(&mut self) {
+        self.working_sets().0.finish();
+    }
+
+    fn swap_sets(&mut self) {
+        self.using_set1 = !self.using_set1;
+    }
+
+    pub fn evolve(&mut self) {
+        let working_sets = self.working_sets();
+        working_sets.0.evolve_into(working_sets.1);
+        self.swap_sets();
+    }
+
+    // FIXME: this method is very unoptimized
+    pub fn live_cells(&self, window: &Window, cells: &mut CellStorage) {
+        let alive = &self.current_set().alive;
+
+        let find_index = |c: Coord| {
+            match alive.binary_search(&c) {
+                Ok(index) => index,
+                Err(index) => index
+            }
+        };
+
+        let lower_index = find_index(Coord(window.x - 1, window.y));
+        let upper_index = find_index(Coord(window.x + window.w as i64, window.y + window.h as i64 + 1));
+
+        assert!(lower_index <= upper_index);
+
+        let slice = &alive[lower_index..upper_index];
+
+        slice.into_iter().filter(|c| {
+            (c.0 >= window.x) && (c.0 < window.x + window.w as i64) &&
+            (c.1 >= window.y) && (c.1 < window.y + window.h as i64)
+        }).for_each(|c| {
+            cells.add_cell(*c);
+        });
     }
 }
 
@@ -248,7 +393,7 @@ enum CellState {
     Alive
 }
 
-fn mutate(state: CellState, neighboors: u8) -> CellState {
+fn mutate(state: CellState, neighboors: usize) -> CellState {
     match state {
         CellState::Dead => match neighboors {
             3 => CellState::Alive,

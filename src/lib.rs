@@ -1,4 +1,5 @@
 #[macro_use]
 extern crate smallvec;
 
-mod world;
+pub mod world;
+pub mod display;
