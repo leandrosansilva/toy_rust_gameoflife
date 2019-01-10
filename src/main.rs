@@ -26,17 +26,16 @@ fn main() {
 
     world.finish();
 
-    let mut window = TerminalDisplay::best_window();
     let mut display = TerminalDisplay::new();
+
+    let mut window = display.best_window();
     let mut cells: std::vec::Vec<Coord> = std::vec::Vec::new();
 
     loop {
         cells.clear();
-
-        display.update_window(&mut window);        
-
         world.live_cells(&window, &mut cells);
         display.display(&cells, &mut window);
         world.evolve();
+        display.update_window(&mut window);
     }
 }
