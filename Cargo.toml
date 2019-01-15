@@ -7,3 +7,10 @@ edition = "2018"
 [dependencies]
 smallvec = "0.6.7"
 crossterm = "0.5.4"
+
+[dev-dependencies]
+criterion = "0.2.7"
+
+[[bench]]
+name = "world_benchmark"
+harness = false
