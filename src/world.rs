@@ -1,3 +1,5 @@
+use rayon::prelude::*;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -226,6 +228,10 @@ struct InterestingCells {
     dead: Coords
 }
 
+fn neighboors_to_dead_list(c: Coord, dead: &mut std::vec::Vec<Coord>) {
+    neighboors(c).into_iter().for_each(|n| dead.push(n));
+}
+
 impl InterestingCells {
     fn live_neighboors(&self, c: Coord) -> Neighboors {
         // TODO: this filtering can be done in parallel
@@ -234,13 +240,19 @@ impl InterestingCells {
 
     fn new() -> Self {
         InterestingCells{
-            alive: vec![],
-            dead: vec![]
+            alive: std::vec::Vec::with_capacity(1000),
+            dead: std::vec::Vec::with_capacity(1000 * 8)
         }
     }
 
+    fn build_dead_neighboors_from_alive(&mut self) {
+        let alive = &self.alive;
+        let mut dead = &mut self.dead;
+        alive.iter().for_each(|c| neighboors_to_dead_list(*c, &mut dead))
+    }
+
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
-        neighboors(c).iter().for_each(|n| self.dead.push(*n));
+        neighboors_to_dead_list(c, &mut self.dead);
         self.alive.push(c);
         self
     }
@@ -250,12 +262,11 @@ impl InterestingCells {
         let dead = &mut self.dead;
         let alive = &mut self.alive;
 
-        alive.sort();
+        alive.par_sort_unstable();
         alive.dedup();
 
-        dead.sort();
+        dead.par_sort_unstable();
         dead.dedup();
-
         dead.retain(|c| alive.binary_search(c).is_err());
     }
 
@@ -270,21 +281,10 @@ impl InterestingCells {
         let alive = &self.alive;
         let dead = &self.dead;
 
-        alive.iter().for_each(|c| {
-            let count = self.live_neighboors(*c).len();
+        e.alive.par_extend(alive.into_par_iter().filter(|c| mutate(CellState::Alive, self.live_neighboors(**c).len()) == CellState::Alive));
+        e.alive.par_extend(dead.into_par_iter().filter(|c| mutate(CellState::Dead, self.live_neighboors(**c).len()) == CellState::Alive));
 
-            if mutate(CellState::Alive, count) == CellState::Alive {
-               e.make_alive(*c);
-            }
-        });
-
-        dead.iter().for_each(|c| {
-            let count = self.live_neighboors(*c).len();
-
-            if mutate(CellState::Dead, count) == CellState::Alive {
-               e.make_alive(*c);
-            }
-        });
+        e.build_dead_neighboors_from_alive();
 
         e.finish();
     }

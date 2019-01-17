@@ -26,16 +26,15 @@ fn main() {
 
     world.finish();
 
-    let mut display = TerminalDisplay::new();
+    //let mut display = TerminalDisplay::new();
+    //let mut window = display.best_window();
+    //let mut cells = Coords::new();
 
-    let mut window = display.best_window();
-    let mut cells = Coords::new();
-
-    loop {
-        cells.clear();
-        world.live_cells(&window, &mut cells);
-        display.display(&cells, &mut window);
+    for n in 0..100 {
+        //cells.clear();
+        //world.live_cells(&window, &mut cells);
+        //display.display(&cells, &mut window);
         world.evolve();
-        display.update_window(&mut window);
+        //display.update_window(&mut window);
     }
 }
