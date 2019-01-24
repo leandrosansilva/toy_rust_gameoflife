@@ -199,7 +199,7 @@ mod tests {
 
         let window = Window::new(2, 1, 3, 4);
 
-        let mut cells: std::vec::Vec<Coord> = std::vec::Vec::new();
+        let mut cells: Coords = std::vec::Vec::new();
         world.live_cells(&window, &mut cells);
 
         let expected = vec![
@@ -217,20 +217,22 @@ mod tests {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy)]
 pub struct Coord(pub i64, pub i64);
 
+pub type Coords = std::vec::Vec<Coord>;
+
 type Neighboors = smallvec::SmallVec<[Coord; 8]>;
 
 struct InterestingCells {
-    alive: std::vec::Vec<Coord>,
-    dead: std::vec::Vec<Coord>
+    alive: Coords,
+    dead: Coords
 }
 
 impl InterestingCells {
     fn live_neighboors(&self, c: Coord) -> Neighboors {
         // TODO: this filtering can be done in parallel
-        neighboors(c).into_iter().filter(|c| !self.alive.binary_search(c).is_err()).collect()
+        neighboors(c).into_iter().filter(|c| self.alive.binary_search(c).is_ok()).collect()
     }
 
-    fn new() -> InterestingCells {
+    fn new() -> Self {
         InterestingCells{
             alive: vec![],
             dead: vec![]
@@ -238,7 +240,7 @@ impl InterestingCells {
     }
 
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
-        neighboors(c).into_iter().for_each(|n| self.dead.push(n));
+        neighboors(c).iter().for_each(|n| self.dead.push(*n));
         self.alive.push(c);
         self
     }
@@ -268,7 +270,7 @@ impl InterestingCells {
         let alive = &self.alive;
         let dead = &self.dead;
 
-        alive.into_iter().for_each(|c| {
+        alive.iter().for_each(|c| {
             let count = self.live_neighboors(*c).len();
 
             if mutate(CellState::Alive, count) == CellState::Alive {
@@ -276,7 +278,7 @@ impl InterestingCells {
             }
         });
 
-        dead.into_iter().for_each(|c| {
+        dead.iter().for_each(|c| {
             let count = self.live_neighboors(*c).len();
 
             if mutate(CellState::Dead, count) == CellState::Alive {
@@ -297,7 +299,7 @@ pub struct Window {
 
 impl Window {
     pub fn new(x: i64, y: i64, w: usize, h: usize) -> Self {
-        Window{w: w, h: h, x: x, y: y}
+        Window{w, h, x, y}
     }
 }
 
@@ -311,14 +313,14 @@ pub trait CellStorage {
     fn add_cell(&mut self, cell: Coord);
 }
 
-impl CellStorage for std::vec::Vec<Coord> {
+impl CellStorage for Coords {
     fn add_cell(&mut self, cell: Coord) {
         self.push(cell);
     }
 }
 
 impl World {
-    pub fn new() -> World {
+    pub fn new() -> Self {
         World {
             set1: InterestingCells::new(),
             set2: InterestingCells::new(),
@@ -334,7 +336,7 @@ impl World {
         }
     }
 
-    fn working_sets<'a>(&'a mut self) -> (&'a mut InterestingCells, &'a mut InterestingCells) {
+    fn working_sets(&mut self) -> (&mut InterestingCells, &mut InterestingCells) {
         if self.using_set1 {
             (&mut self.set1, &mut self.set2)
         } else {
@@ -378,7 +380,7 @@ impl World {
 
         let slice = &alive[lower_index..upper_index];
 
-        slice.into_iter().filter(|c| {
+        slice.iter().filter(|c| {
             (c.0 >= window.x) && (c.0 < window.x + window.w as i64) &&
             (c.1 >= window.y) && (c.1 < window.y + window.h as i64)
         }).for_each(|c| {
