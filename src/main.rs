@@ -29,7 +29,7 @@ fn main() {
     let mut display = TerminalDisplay::new();
 
     let mut window = display.best_window();
-    let mut cells: std::vec::Vec<Coord> = std::vec::Vec::new();
+    let mut cells = Coords::new();
 
     loop {
         cells.clear();
