@@ -174,7 +174,7 @@ mod tests {
         let mut world = World::new();
         world.finish();
 
-        let mut cells = std::vec::Vec::new();
+        let mut cells = Coords::new();
         let window = Window::new(0, 0, 3, 4);
 
         world.live_cells(&window, &mut cells);
@@ -201,7 +201,7 @@ mod tests {
 
         let window = Window::new(2, 1, 3, 4);
 
-        let mut cells: Coords = std::vec::Vec::new();
+        let mut cells = Coords::new();
         world.live_cells(&window, &mut cells);
 
         let expected = vec![
@@ -228,7 +228,7 @@ struct InterestingCells {
     dead: Coords
 }
 
-fn neighboors_to_dead_list(c: Coord, dead: &mut std::vec::Vec<Coord>) {
+fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
     neighboors(c).into_iter().for_each(|n| dead.push(n));
 }
 
@@ -240,8 +240,8 @@ impl InterestingCells {
 
     fn new() -> Self {
         InterestingCells{
-            alive: std::vec::Vec::with_capacity(1000),
-            dead: std::vec::Vec::with_capacity(1000 * 8)
+            alive: Coords::with_capacity(1000),
+            dead: Coords::with_capacity(1000 * 8)
         }
     }
 

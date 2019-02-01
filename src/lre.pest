@@ -1,0 +1,22 @@
+File = _{ SOI ~ Life ~ EOI } 
+
+Life = { Metas ~ Header ~ Body? }
+
+Metas = { Meta* }
+Meta = @{ "#" ~ MetaType ~ MetaContent ~ NEWLINE }
+MetaType = @{ "C" | "c" | "N" | "O" | "P" | "R" | "r" }
+MetaContent = @{ PRINTABLE }
+
+Header = { "x" ~ "=" ~ X ~ "," ~ "y" ~ "=" ~ Y }
+X = ${ NUMBER }
+Y = ${ NUMBER }
+
+Body = ${ Pattern+ ~ "!" ~ Garbage? }
+Pattern = ${ RunCount? ~ Tag }
+RunCount = ${ NUMBER }
+Tag = ${ "b" | "o" | "$" }
+Garbage = _{ ANY+ }
+
+NUMBER = @{ ASCII_DIGIT+ }
+PRINTABLE = @{ (!NEWLINE ~ ANY)* }
+WHITESPACE = _{ (" " | "\t" | "\n")+ }
