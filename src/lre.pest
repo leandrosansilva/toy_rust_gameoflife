@@ -1,3 +1,5 @@
+// Documented at http://www.conwaylife.com/wiki/Run_Length_Encoded
+
 File = _{ SOI ~ Life ~ EOI } 
 
 Life = { Metas ~ Header ~ Body? }
