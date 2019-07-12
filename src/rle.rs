@@ -4,8 +4,9 @@ mod tests {
 
     #[test]
     fn parse_empty_life() {
+        let mut fake = FakeStorage{ cells: vec![] };
         let content = "x = 0, y = 0\n";
-        let parsed = parse(content).unwrap();
+        let parsed = parse(content, &mut fake).unwrap();
         assert!(parsed.x == 0);
         assert!(parsed.y == 0);
     }
@@ -19,12 +20,12 @@ x = 3, y = 3
 bo$2bo$3o!
 
 "#;
-        let parsed = parse(content).unwrap();
+        let mut fake = FakeStorage{ cells: vec![] };
+        let parsed = parse(content, &mut fake).unwrap();
         assert!(parsed.x == 3);
         assert!(parsed.y == 3);
 
         let mut storage = FakeStorage{cells: vec![]};
-        parsed.add_cells(&mut storage);
 
         use crate::world::Coord;
 
@@ -57,12 +58,6 @@ struct LreLife {
     y: i32,
 }
 
-impl LreLife {
-    fn add_cells(&self, storage: &mut LifePlaceMaker) {
-
-    }
-}
-
 use crate::world::Coord;
 
 #[derive(Debug)]
@@ -72,11 +67,11 @@ struct FakeStorage {
 
 impl LifePlaceMaker for FakeStorage {
     fn make_cell_alive(&mut self, coord: Coord) {
-
+        self.cells.push(coord);
     }
 }
 
-fn parse(content: &str) -> Result<LreLife, pest::error::Error<Rule>> {
+fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::error::Error<Rule>> {
     use pest::iterators::Pair;
 
     fn get_x_y(pair: Pair<Rule>) -> (i32, i32) {
@@ -95,11 +90,16 @@ fn parse(content: &str) -> Result<LreLife, pest::error::Error<Rule>> {
 
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();
 
-    let mut inner = p.into_inner();
-    inner.next();
-    let node = inner.next();
+    {
+        println!("tree: {:#?}", p);
+    }
 
-    let size = get_x_y(node.unwrap());
+    let size = {
+        let mut inner = p.into_inner();
+        inner.next();
+        let node = inner.next();
+        get_x_y(node.unwrap())
+    };
 
     Ok(LreLife {x: size.0, y: size.1})
 }

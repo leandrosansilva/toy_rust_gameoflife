@@ -13,10 +13,12 @@ Header = { "x" ~ "=" ~ X ~ "," ~ "y" ~ "=" ~ Y }
 X = ${ NUMBER }
 Y = ${ NUMBER }
 
-Body = ${ Pattern+ ~ "!" ~ Garbage? }
-Pattern = ${ RunCount? ~ Tag }
+Body = ${ Patterns ~ "!" ~ Garbage? }
+Patterns = ${ Pattern+ }
+Pattern = ${ (RunCount? ~ Tag) | EndOfLinePattern }
 RunCount = ${ NUMBER }
-Tag = ${ "b" | "o" | "$" }
+Tag = ${ "b" | "o"}
+EndOfLinePattern = ${ "$" }
 Garbage = _{ ANY+ }
 
 NUMBER = @{ ASCII_DIGIT+ }
