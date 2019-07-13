@@ -75,79 +75,84 @@ impl LifePlaceMaker for FakeStorage {
     }
 }
 
+fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (i32, i32) {
+    let mut inner = pair.into_inner();
+
+    let mut number_from_node = || {
+        let node = inner.next();
+        node.unwrap().as_str().parse::<i32>().unwrap()
+    };
+
+    let x = number_from_node();
+    let y = number_from_node();
+
+    (x, y)
+}
+
+fn get_body_contents(node: pest::iterators::Pair<Rule>, storage: &mut LifePlaceMaker) {
+    let patterns = node.into_inner().next().unwrap().into_inner();
+
+    let mut line = 0i64;
+    let mut column = 0i64;
+
+    // TODO: refactor this loop and all those nested blocks to their own functions!
+    for pattern in patterns {
+        for pattern_type in pattern.into_inner() {
+            match pattern_type.as_rule() {
+                Rule::EndOfLinePattern => {
+                    line += 1;
+                    column = 0;
+                }
+
+                Rule::DeadOrAlive => {
+                    let mut run_count = 1i64;
+                    let mut should_add = false;
+
+                    for component in pattern_type.into_inner() {
+                        match component.as_rule() {
+                            Rule::RunCount => {
+                                run_count = component.as_str().parse::<i64>().unwrap();
+                            }
+                            Rule::Tag => {
+                                if component.into_inner().next().unwrap().as_rule()
+                                    == Rule::AliveTag
+                                {
+                                    should_add = true;
+                                }
+                            }
+                            _ => unreachable!(),
+                        }
+                    }
+
+                    if should_add {
+                        for c in 0..run_count {
+                            let column = column + c;
+                            storage.make_cell_alive(Coord(column, line));
+                        }
+                    }
+
+                    column += run_count;
+                }
+
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
 fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::error::Error<Rule>> {
     use pest::iterators::Pair;
 
-    fn get_x_y(pair: Pair<Rule>) -> (i32, i32) {
-        let mut inner = pair.into_inner();
-
-        let mut number_from_node = || {
-            let node = inner.next();
-            node.unwrap().as_str().parse::<i32>().unwrap()
-        };
-
-        let x = number_from_node();
-        let y = number_from_node();
-
-        (x, y)
-    }
-
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();
 
+    // TODO: define this in terms of for/match instead of manually unwrapping
     let mut inner = p.into_inner();
     inner.next();
     let node = inner.next();
     let size = get_x_y(node.unwrap());
 
     if let Some(node) = inner.next() {
-        let patterns = node.into_inner().next().unwrap().into_inner();
-        //println!("body: {:#?}", patterns);
-
-        let mut line = 0i64;
-        let mut column = 0i64;
-
-        for pattern in patterns {
-            for t in pattern.into_inner() {
-                match t.as_rule() {
-                    Rule::EndOfLinePattern => {
-                        line += 1;
-                        column = 0;
-                    }
-
-                    Rule::DeadOrAlive => {
-                        let mut run_count = 1i64;
-                        let mut should_add = false;
-
-                        for component in t.into_inner() {
-                            match component.as_rule() {
-                                Rule::RunCount => {
-                                    run_count = component.as_str().parse::<i64>().unwrap();
-                                }
-                                Rule::Tag => {
-                                    if component.into_inner().next().unwrap().as_rule()
-                                        == Rule::AliveTag
-                                    {
-                                        should_add = true;
-                                    }
-                                }
-                                _ => unreachable!(),
-                            }
-                        }
-
-                        if should_add {
-                            for c in 0..run_count {
-                                let column = column + c;
-                                storage.make_cell_alive(Coord(column, line));
-                            }
-                        }
-
-                        column += run_count;
-                    }
-
-                    _ => unreachable!(),
-                }
-            }
-        }
+        get_body_contents(node, storage);
     }
 
     Ok(LreLife {
