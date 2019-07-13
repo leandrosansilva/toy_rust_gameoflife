@@ -163,8 +163,6 @@ pub fn parse(
     content: &str,
     storage: &mut LifePlaceMaker,
 ) -> Result<LreLife, pest::error::Error<Rule>> {
-    use pest::iterators::Pair;
-
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();
 
     // TODO: define this in terms of for/match instead of manually unwrapping

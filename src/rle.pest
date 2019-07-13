@@ -17,12 +17,12 @@ RuleDef = ${ (ASCII_ALPHANUMERIC | "/")+ }
 Body = { Patterns ~ "!" ~ Garbage? }
 Patterns = { Pattern+ }
 Pattern = ${ DeadOrAlive | EndOfLinePattern }
-DeadOrAlive = ${ (RunCount? ~ Tag) }
+DeadOrAlive = ${ RunCount? ~ Tag }
 RunCount = ${ NUMBER }
 Tag = ${ DeadTag | AliveTag }
 DeadTag = ${ "b" }
 AliveTag = ${ "o" }
-EndOfLinePattern = ${ "$" }
+EndOfLinePattern = ${ RunCount? ~ "$" }
 Garbage = _{ ANY+ }
 
 NUMBER = @{ ASCII_DIGIT+ }
