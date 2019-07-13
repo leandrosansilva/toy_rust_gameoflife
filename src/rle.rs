@@ -4,11 +4,12 @@ mod tests {
 
     #[test]
     fn parse_empty_life() {
-        let mut fake = FakeStorage { cells: vec![] };
+        let mut storage = FakeStorage { cells: vec![] };
         let content = "x = 0, y = 0\n";
-        let parsed = parse(content, &mut fake).unwrap();
-        assert!(parsed.x == 0);
-        assert!(parsed.y == 0);
+        let parsed = parse(content, &mut storage).unwrap();
+        assert_eq!(parsed.x, 0);
+        assert_eq!(parsed.y, 0);
+        assert_eq!(storage.cells, vec![]);
     }
 
     #[test]
@@ -20,12 +21,10 @@ x = 3, y = 3
 bo$2bo$3o!
 
 "#;
-        let mut fake = FakeStorage { cells: vec![] };
-        let parsed = parse(content, &mut fake).unwrap();
-        assert!(parsed.x == 3);
-        assert!(parsed.y == 3);
-
         let mut storage = FakeStorage { cells: vec![] };
+        let parsed = parse(content, &mut storage).unwrap();
+        assert_eq!(parsed.x, 3);
+        assert_eq!(parsed.y, 3);
 
         use crate::world::Coord;
 
@@ -95,10 +94,6 @@ fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::e
 
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();
 
-    {
-        //println!("tree: {:#?}", p);
-    }
-
     let mut inner = p.into_inner();
     inner.next();
     let node = inner.next();
@@ -106,10 +101,10 @@ fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::e
 
     if let Some(node) = inner.next() {
         let patterns = node.into_inner().next().unwrap().into_inner();
-        println!("body: {:#?}", patterns);
+        //println!("body: {:#?}", patterns);
 
-        let mut line = 0i32;
-        let mut column = 0i32;
+        let mut line = 0i64;
+        let mut column = 0i64;
 
         for pattern in patterns {
             for t in pattern.into_inner() {
@@ -120,13 +115,13 @@ fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::e
                     }
 
                     Rule::DeadOrAlive => {
-                        let mut run_count = 1i32;
+                        let mut run_count = 1i64;
                         let mut should_add = false;
 
                         for component in t.into_inner() {
                             match component.as_rule() {
                                 Rule::RunCount => {
-                                    run_count = component.as_str().parse::<i32>().unwrap();
+                                    run_count = component.as_str().parse::<i64>().unwrap();
                                 }
                                 Rule::Tag => {
                                     if component.into_inner().next().unwrap().as_rule()
@@ -139,7 +134,14 @@ fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::e
                             }
                         }
 
-                        if should_add {}
+                        if should_add {
+                            for c in 0..run_count {
+                                let column = column + c;
+                                storage.make_cell_alive(Coord(column, line));
+                            }
+                        }
+
+                        column += run_count;
                     }
 
                     _ => unreachable!(),
