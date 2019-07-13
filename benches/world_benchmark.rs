@@ -30,17 +30,18 @@ fn world_bench(c: &mut Criterion) {
 
     world.finish();
 
-    c.bench_function("do 1000 iterations", |b| b.iter(|| {
-        let mut world = World::new();
+    c.bench_function("do 1000 iterations", |b| {
+        b.iter(|| {
+            let mut world = World::new();
 
-        for n in 0..1000 {
-            world.evolve();
-        }
+            for n in 0..1000 {
+                world.evolve();
+            }
 
-        ()
-    }));
+            ()
+        })
+    });
 }
 
 criterion_group!(benches, world_bench);
 criterion_main!(benches);
-

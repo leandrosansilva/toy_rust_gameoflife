@@ -15,9 +15,12 @@ Y = ${ NUMBER }
 
 Body = ${ Patterns ~ "!" ~ Garbage? }
 Patterns = ${ Pattern+ }
-Pattern = ${ (RunCount? ~ Tag) | EndOfLinePattern }
+Pattern = ${ DeadOrAlive | EndOfLinePattern }
+DeadOrAlive = ${ (RunCount? ~ Tag) }
 RunCount = ${ NUMBER }
-Tag = ${ "b" | "o"}
+Tag = ${ DeadTag | AliveTag }
+DeadTag = ${ "b" }
+AliveTag = ${ "o" }
 EndOfLinePattern = ${ "$" }
 Garbage = _{ ANY+ }
 

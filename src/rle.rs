@@ -4,7 +4,7 @@ mod tests {
 
     #[test]
     fn parse_empty_life() {
-        let mut fake = FakeStorage{ cells: vec![] };
+        let mut fake = FakeStorage { cells: vec![] };
         let content = "x = 0, y = 0\n";
         let parsed = parse(content, &mut fake).unwrap();
         assert!(parsed.x == 0);
@@ -20,20 +20,25 @@ x = 3, y = 3
 bo$2bo$3o!
 
 "#;
-        let mut fake = FakeStorage{ cells: vec![] };
+        let mut fake = FakeStorage { cells: vec![] };
         let parsed = parse(content, &mut fake).unwrap();
         assert!(parsed.x == 3);
         assert!(parsed.y == 3);
 
-        let mut storage = FakeStorage{cells: vec![]};
+        let mut storage = FakeStorage { cells: vec![] };
 
         use crate::world::Coord;
 
-        assert_eq!(storage.cells, vec![
-                   Coord(1, 0),
-                   Coord(2, 1),
-                   Coord(0, 2), Coord(1, 2), Coord(2, 2)
-        ]);
+        assert_eq!(
+            storage.cells,
+            vec![
+                Coord(1, 0),
+                Coord(2, 1),
+                Coord(0, 2),
+                Coord(1, 2),
+                Coord(2, 2)
+            ]
+        );
     }
 
     #[test]
@@ -50,7 +55,7 @@ use pest::Parser;
 use pest_derive::*;
 
 #[derive(Parser)]
-#[grammar = "lre.pest"]
+#[grammar = "rle.pest"]
 struct LreFile;
 
 struct LreLife {
@@ -91,15 +96,60 @@ fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::e
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();
 
     {
-        println!("tree: {:#?}", p);
+        //println!("tree: {:#?}", p);
     }
 
-    let size = {
-        let mut inner = p.into_inner();
-        inner.next();
-        let node = inner.next();
-        get_x_y(node.unwrap())
-    };
+    let mut inner = p.into_inner();
+    inner.next();
+    let node = inner.next();
+    let size = get_x_y(node.unwrap());
 
-    Ok(LreLife {x: size.0, y: size.1})
+    if let Some(node) = inner.next() {
+        let patterns = node.into_inner().next().unwrap().into_inner();
+        println!("body: {:#?}", patterns);
+
+        let mut line = 0i32;
+        let mut column = 0i32;
+
+        for pattern in patterns {
+            for t in pattern.into_inner() {
+                match t.as_rule() {
+                    Rule::EndOfLinePattern => {
+                        line += 1;
+                        column = 0;
+                    }
+
+                    Rule::DeadOrAlive => {
+                        let mut run_count = 1i32;
+                        let mut should_add = false;
+
+                        for component in t.into_inner() {
+                            match component.as_rule() {
+                                Rule::RunCount => {
+                                    run_count = component.as_str().parse::<i32>().unwrap();
+                                }
+                                Rule::Tag => {
+                                    if component.into_inner().next().unwrap().as_rule()
+                                        == Rule::AliveTag
+                                    {
+                                        should_add = true;
+                                    }
+                                }
+                                _ => unreachable!(),
+                            }
+                        }
+
+                        if should_add {}
+                    }
+
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+
+    Ok(LreLife {
+        x: size.0,
+        y: size.1,
+    })
 }

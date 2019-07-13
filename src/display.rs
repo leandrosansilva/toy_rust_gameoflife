@@ -9,7 +9,7 @@ pub trait WorldDisplay {
 pub struct TerminalDisplay<'stdout> {
     terminal: crossterm::terminal::Terminal<'stdout>,
     input: crossterm::input::TerminalInput<'stdout>,
-    cursor: crossterm::cursor::TerminalCursor<'stdout>
+    cursor: crossterm::cursor::TerminalCursor<'stdout>,
 }
 
 impl<'stdout> TerminalDisplay<'stdout> {
@@ -17,7 +17,7 @@ impl<'stdout> TerminalDisplay<'stdout> {
         TerminalDisplay {
             terminal: crossterm::terminal::terminal(),
             input: crossterm::input::input(),
-            cursor: crossterm::cursor::cursor()
+            cursor: crossterm::cursor::cursor(),
         }
     }
 
@@ -37,8 +37,11 @@ impl<'stdout> TerminalDisplay<'stdout> {
                 's' => window.y += 3,
                 'a' => window.x -= 3,
                 'd' => window.x += 3,
-                'r' => {window.x = 0; window.y = 0;},
-                _ => ()
+                'r' => {
+                    window.x = 0;
+                    window.y = 0;
+                }
+                _ => (),
             }
         }
     }
@@ -63,6 +66,9 @@ impl<'stdout> WorldDisplay for TerminalDisplay<'stdout> {
         }
 
         self.cursor.goto(0, 0);
-        println!("x: {}, y: {}, w: {}, h: {}", window.x, window.y, window.w, window.h);
+        println!(
+            "x: {}, y: {}, w: {}, h: {}",
+            window.x, window.y, window.w, window.h
+        );
     }
 }

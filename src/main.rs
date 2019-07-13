@@ -1,6 +1,6 @@
 fn main() {
-    use gameoflife::world::*;
     use gameoflife::display::*;
+    use gameoflife::world::*;
 
     let mut world = World::new();
 

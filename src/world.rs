@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn no_cell_has_no_neighboors() {
         let mut ic = InterestingCells::new();
-        ic.make_alive(Coord(0,0));
+        ic.make_alive(Coord(0, 0));
         ic.finish();
 
         let n = ic.live_neighboors(Coord(0, 0));
@@ -81,14 +81,13 @@ mod tests {
     fn cell_with_one_neighboor() {
         let mut ic = InterestingCells::new();
 
-        ic.make_alive(Coord(0,0))
-          .make_alive(Coord(1,1));
+        ic.make_alive(Coord(0, 0)).make_alive(Coord(1, 1));
 
         ic.finish();
 
         let n = ic.live_neighboors(Coord(0, 0));
 
-        let expected: Neighboors = smallvec![Coord(1,1)];
+        let expected: Neighboors = smallvec![Coord(1, 1)];
 
         assert_eq!(ic.dead.len(), 12);
         assert_eq!(n, expected);
@@ -134,12 +133,7 @@ mod tests {
 
         ic1.evolve_into(&mut ic2);
 
-        let mut expected = vec![
-            Coord(0, 0),
-            Coord(1, 0),
-            Coord(0, 1),
-            Coord(1, 1)
-        ];
+        let mut expected = vec![Coord(0, 0), Coord(1, 0), Coord(0, 1), Coord(1, 1)];
 
         expected.sort();
 
@@ -160,9 +154,7 @@ mod tests {
 
         ic1.evolve_into(&mut ic2);
 
-        let mut expected = vec![
-            Coord(1, 1)
-        ];
+        let mut expected = vec![Coord(1, 1)];
 
         expected.sort();
 
@@ -225,7 +217,7 @@ type Neighboors = smallvec::SmallVec<[Coord; 8]>;
 
 struct InterestingCells {
     alive: Coords,
-    dead: Coords
+    dead: Coords,
 }
 
 fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
@@ -235,20 +227,25 @@ fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
 impl InterestingCells {
     fn live_neighboors(&self, c: Coord) -> Neighboors {
         // TODO: this filtering can be done in parallel
-        neighboors(c).into_iter().filter(|c| self.alive.binary_search(c).is_ok()).collect()
+        neighboors(c)
+            .into_iter()
+            .filter(|c| self.alive.binary_search(c).is_ok())
+            .collect()
     }
 
     fn new() -> Self {
-        InterestingCells{
+        InterestingCells {
             alive: Coords::with_capacity(1000),
-            dead: Coords::with_capacity(1000 * 8)
+            dead: Coords::with_capacity(1000 * 8),
         }
     }
 
     fn build_dead_neighboors_from_alive(&mut self) {
         let alive = &self.alive;
         let mut dead = &mut self.dead;
-        alive.iter().for_each(|c| neighboors_to_dead_list(*c, &mut dead))
+        alive
+            .iter()
+            .for_each(|c| neighboors_to_dead_list(*c, &mut dead))
     }
 
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
@@ -281,8 +278,12 @@ impl InterestingCells {
         let alive = &self.alive;
         let dead = &self.dead;
 
-        e.alive.par_extend(alive.into_par_iter().filter(|c| mutate(CellState::Alive, self.live_neighboors(**c).len()) == CellState::Alive));
-        e.alive.par_extend(dead.into_par_iter().filter(|c| mutate(CellState::Dead, self.live_neighboors(**c).len()) == CellState::Alive));
+        e.alive.par_extend(alive.into_par_iter().filter(|c| {
+            mutate(CellState::Alive, self.live_neighboors(**c).len()) == CellState::Alive
+        }));
+        e.alive.par_extend(dead.into_par_iter().filter(|c| {
+            mutate(CellState::Dead, self.live_neighboors(**c).len()) == CellState::Alive
+        }));
 
         e.build_dead_neighboors_from_alive();
 
@@ -291,22 +292,22 @@ impl InterestingCells {
 }
 
 pub struct Window {
-    pub w : usize,
+    pub w: usize,
     pub h: usize,
     pub x: i64,
-    pub y: i64
+    pub y: i64,
 }
 
 impl Window {
     pub fn new(x: i64, y: i64, w: usize, h: usize) -> Self {
-        Window{w, h, x, y}
+        Window { w, h, x, y }
     }
 }
 
 pub struct World {
     set1: InterestingCells,
     set2: InterestingCells,
-    using_set1: bool
+    using_set1: bool,
 }
 
 pub trait CellStorage {
@@ -324,7 +325,7 @@ impl World {
         World {
             set1: InterestingCells::new(),
             set2: InterestingCells::new(),
-            using_set1: true
+            using_set1: true,
         }
     }
 
@@ -366,57 +367,63 @@ impl World {
     pub fn live_cells(&self, window: &Window, cells: &mut CellStorage) {
         let alive = &self.current_set().alive;
 
-        let find_index = |c: Coord| {
-            match alive.binary_search(&c) {
-                Ok(index) => index,
-                Err(index) => index
-            }
+        let find_index = |c: Coord| match alive.binary_search(&c) {
+            Ok(index) => index,
+            Err(index) => index,
         };
 
         let lower_index = find_index(Coord(window.x - 1, window.y));
-        let upper_index = find_index(Coord(window.x + window.w as i64, window.y + window.h as i64 + 1));
+        let upper_index = find_index(Coord(
+            window.x + window.w as i64,
+            window.y + window.h as i64 + 1,
+        ));
 
         assert!(lower_index <= upper_index);
 
         let slice = &alive[lower_index..upper_index];
 
-        slice.iter().filter(|c| {
-            (c.0 >= window.x) && (c.0 < window.x + window.w as i64) &&
-            (c.1 >= window.y) && (c.1 < window.y + window.h as i64)
-        }).for_each(|c| {
-            cells.add_cell(*c);
-        });
+        slice
+            .iter()
+            .filter(|c| {
+                (c.0 >= window.x)
+                    && (c.0 < window.x + window.w as i64)
+                    && (c.1 >= window.y)
+                    && (c.1 < window.y + window.h as i64)
+            })
+            .for_each(|c| {
+                cells.add_cell(*c);
+            });
     }
 }
 
 #[derive(Debug, PartialEq)]
 enum CellState {
     Dead,
-    Alive
+    Alive,
 }
 
 fn mutate(state: CellState, neighboors: usize) -> CellState {
     match state {
         CellState::Dead => match neighboors {
             3 => CellState::Alive,
-            _ => CellState::Dead
+            _ => CellState::Dead,
         },
         CellState::Alive => match neighboors {
-            2|3 => CellState::Alive,
-            _ => CellState::Dead
-        }
+            2 | 3 => CellState::Alive,
+            _ => CellState::Dead,
+        },
     }
 }
 
 fn neighboors(c: Coord) -> Neighboors {
     smallvec![
         Coord(c.0 - 1, c.1 - 1),
-        Coord(c.0    , c.1 - 1),
+        Coord(c.0, c.1 - 1),
         Coord(c.0 + 1, c.1 - 1),
         Coord(c.0 + 1, c.1),
         Coord(c.0 + 1, c.1 + 1),
-        Coord(c.0    , c.1 + 1),
+        Coord(c.0, c.1 + 1),
         Coord(c.0 - 1, c.1 + 1),
         Coord(c.0 - 1, c.1)
     ]
-} 
+}
