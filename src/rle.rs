@@ -57,7 +57,6 @@ obo$10bo5bo7bo$11bo3bo$12b2o!
         assert_eq!(parsed.y, 9);
 
         assert!(storage.cells.len() > 0);
-
     }
 
     #[test]

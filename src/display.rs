@@ -25,9 +25,9 @@ impl<'stdout> TerminalDisplay<'stdout> {
         self.terminal.clear(crossterm::terminal::ClearType::All);
     }
 
-    pub fn best_window(&self) -> world::Window {
+    pub fn best_window(&self, x: i64, y: i64) -> world::Window {
         let (w, h) = self.terminal.terminal_size();
-        world::Window::new(0, 0, w as usize, h as usize)
+        world::Window::new(x, y, w as usize, h as usize)
     }
 
     pub fn update_window(&mut self, window: &mut world::Window) {
@@ -37,7 +37,11 @@ impl<'stdout> TerminalDisplay<'stdout> {
                 's' => window.y += 3,
                 'a' => window.x -= 3,
                 'd' => window.x += 3,
-                'r' => {
+                'W' => window.y -= 30,
+                'S' => window.y += 30,
+                'A' => window.x -= 30,
+                'D' => window.x += 30,
+                'R' => {
                     window.x = 0;
                     window.y = 0;
                 }
