@@ -41,6 +41,26 @@ bo$2bo$3o!
     }
 
     #[test]
+    fn parse_gosper_glider() {
+        let content = r#"
+        #N Gosper glider gun
+#C This was the first gun discovered.
+#C As its name suggests, it was discovered by Bill Gosper.
+x = 36, y = 9, rule = B3/S23
+24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4b
+obo$10bo5bo7bo$11bo3bo$12b2o!
+            "#;
+
+        let mut storage = FakeStorage { cells: vec![] };
+        let parsed = parse(content, &mut storage).unwrap();
+        assert_eq!(parsed.x, 36);
+        assert_eq!(parsed.y, 9);
+
+        assert!(storage.cells.len() > 0);
+
+    }
+
+    #[test]
     fn parse_body() {
         LreFile::parse(Rule::Body, "bo$2bo$3o\n3o!").unwrap();
     }

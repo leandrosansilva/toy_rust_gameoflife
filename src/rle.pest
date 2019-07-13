@@ -9,9 +9,10 @@ Meta = @{ "#" ~ MetaType ~ MetaContent ~ NEWLINE }
 MetaType = @{ "C" | "c" | "N" | "O" | "P" | "R" | "r" }
 MetaContent = @{ PRINTABLE }
 
-Header = { "x" ~ "=" ~ X ~ "," ~ "y" ~ "=" ~ Y }
+Header = { "x" ~ "=" ~ X ~ "," ~ "y" ~ "=" ~ Y ~ ("," ~ "rule" ~ "=" ~ RuleDef)?}
 X = ${ NUMBER }
 Y = ${ NUMBER }
+RuleDef = ${ (ASCII_ALPHANUMERIC | "/")+ }
 
 Body = { Patterns ~ "!" ~ Garbage? }
 Patterns = { Pattern+ }
