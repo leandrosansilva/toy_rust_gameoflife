@@ -1,28 +1,43 @@
+use gameoflife::rle;
+use gameoflife::world::*;
+
+struct WorldLifePlaceMaker<'a> {
+    position: Coord,
+    world: &'a mut World,
+}
+
+impl<'a> WorldLifePlaceMaker<'a> {
+    fn new(position: Coord, world: &'a mut World) -> WorldLifePlaceMaker<'a> {
+        WorldLifePlaceMaker {
+            position: position,
+            world: world,
+        }
+    }
+}
+
+impl<'a> rle::LifePlaceMaker for WorldLifePlaceMaker<'a> {
+    fn make_cell_alive(&mut self, coord: Coord) {
+        self.world
+            .make_alive(Coord(self.position.0 + coord.0, self.position.1 + coord.1));
+    }
+}
+
 fn main() {
     use gameoflife::display::*;
-    use gameoflife::world::*;
+    use std::env;
+    use std::fs;
+
+    let args: Vec<String> = env::args().collect();
+
+    let filename = &args[1];
 
     let mut world = World::new();
 
-    for n in 0..100 {
-        world.make_alive(Coord(n + 100, n));
-        world.make_alive(Coord(n + 1 + 100, n));
-        world.make_alive(Coord(n + 1 + 100, n + 12));
-        world.make_alive(Coord(n + 1 + 30, n + 40));
-    }
+    let mut placemaker = WorldLifePlaceMaker::new(Coord(0, 0), &mut world);
 
-    world.make_alive(Coord(2, 0));
-    world.make_alive(Coord(1, 1));
-    world.make_alive(Coord(3, 1));
-    world.make_alive(Coord(0, 2));
-    world.make_alive(Coord(2, 2));
-    world.make_alive(Coord(2, 3));
-    world.make_alive(Coord(4, 2));
-    world.make_alive(Coord(5, 1));
-    world.make_alive(Coord(4, 4));
-    world.make_alive(Coord(2, 5));
-    world.make_alive(Coord(42, 3));
-    world.make_alive(Coord(3, 42));
+    let life_content = fs::read_to_string(filename).unwrap();
+
+    let _ = rle::parse(&life_content, &mut placemaker).unwrap();
 
     world.finish();
 
@@ -35,6 +50,6 @@ fn main() {
         world.live_cells(&window, &mut cells);
         display.display(&cells, &mut window);
         world.evolve();
-        //display.update_window(&mut window);
+        display.update_window(&mut window);
     }
 }
