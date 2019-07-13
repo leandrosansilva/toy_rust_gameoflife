@@ -42,7 +42,7 @@ bo$2bo$3o!
 
     #[test]
     fn parse_body() {
-        LreFile::parse(Rule::Body, "bo$2bo$3o!").unwrap();
+        LreFile::parse(Rule::Body, "bo$2bo$3o\n3o!").unwrap();
     }
 }
 
@@ -50,6 +50,7 @@ pub trait LifePlaceMaker {
     fn make_cell_alive(&mut self, coord: Coord);
 }
 
+use crate::world::Coord;
 use pest::Parser;
 use pest_derive::*;
 
@@ -57,12 +58,10 @@ use pest_derive::*;
 #[grammar = "rle.pest"]
 struct LreFile;
 
-struct LreLife {
+pub struct LreLife {
     x: i32,
     y: i32,
 }
-
-use crate::world::Coord;
 
 #[derive(Debug)]
 struct FakeStorage {
@@ -140,7 +139,10 @@ fn get_body_contents(node: pest::iterators::Pair<Rule>, storage: &mut LifePlaceM
     }
 }
 
-fn parse(content: &str, storage: &mut LifePlaceMaker) -> Result<LreLife, pest::error::Error<Rule>> {
+pub fn parse(
+    content: &str,
+    storage: &mut LifePlaceMaker,
+) -> Result<LreLife, pest::error::Error<Rule>> {
     use pest::iterators::Pair;
 
     let p = LreFile::parse(Rule::File, content)?.next().unwrap();

@@ -13,8 +13,8 @@ Header = { "x" ~ "=" ~ X ~ "," ~ "y" ~ "=" ~ Y }
 X = ${ NUMBER }
 Y = ${ NUMBER }
 
-Body = ${ Patterns ~ "!" ~ Garbage? }
-Patterns = ${ Pattern+ }
+Body = { Patterns ~ "!" ~ Garbage? }
+Patterns = { Pattern+ }
 Pattern = ${ DeadOrAlive | EndOfLinePattern }
 DeadOrAlive = ${ (RunCount? ~ Tag) }
 RunCount = ${ NUMBER }
@@ -26,4 +26,4 @@ Garbage = _{ ANY+ }
 
 NUMBER = @{ ASCII_DIGIT+ }
 PRINTABLE = @{ (!NEWLINE ~ ANY)* }
-WHITESPACE = _{ (" " | "\t" | "\n")+ }
+WHITESPACE = _{ (" " | NEWLINE)+ }
