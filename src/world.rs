@@ -177,19 +177,20 @@ mod tests {
     #[test]
     fn windows_of_one_cell_world() {
         let mut world = World::new();
-        world.make_alive(Coord(2, 0));
-        world.make_alive(Coord(1, 1));
-        world.make_alive(Coord(3, 1));
-        world.make_alive(Coord(0, 2));
-        world.make_alive(Coord(2, 2));
-        world.make_alive(Coord(2, 3));
-        world.make_alive(Coord(4, 2));
-        world.make_alive(Coord(5, 1));
-        world.make_alive(Coord(4, 4));
-        world.make_alive(Coord(2, 5));
-        world.make_alive(Coord(42, 3));
-        world.make_alive(Coord(3, 42));
-        world.finish();
+        world.action(|world| {
+            world.make_alive(Coord(2, 0));
+            world.make_alive(Coord(1, 1));
+            world.make_alive(Coord(3, 1));
+            world.make_alive(Coord(0, 2));
+            world.make_alive(Coord(2, 2));
+            world.make_alive(Coord(2, 3));
+            world.make_alive(Coord(4, 2));
+            world.make_alive(Coord(5, 1));
+            world.make_alive(Coord(4, 4));
+            world.make_alive(Coord(2, 5));
+            world.make_alive(Coord(42, 3));
+            world.make_alive(Coord(3, 42));
+        });
 
         let window = Window::new(2, 1, 3, 4);
 
@@ -349,8 +350,13 @@ impl World {
         self.working_sets().0.make_alive(c);
     }
 
-    pub fn finish(&mut self) {
+    fn finish(&mut self) {
         self.working_sets().0.finish();
+    }
+
+    pub fn action<F: Fn(&mut World)>(&mut self, f: F) {
+        f(self);
+        self.finish();
     }
 
     fn swap_sets(&mut self) {

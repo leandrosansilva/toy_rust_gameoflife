@@ -30,13 +30,11 @@ fn main() {
 
     let mut world = World::new();
 
-    let mut placemaker = WorldLifePlaceMaker::new(Coord(0, 0), &mut world);
-
-    let life_content = fs::read_to_string(filename).unwrap();
-
-    let _ = rle::parse(&life_content, &mut placemaker).unwrap();
-
-    world.finish();
+    world.action(|world| {
+        let mut placemaker = WorldLifePlaceMaker::new(Coord(0, 0), world);
+        let life_content = fs::read_to_string(filename).unwrap();
+        let _ = rle::parse(&life_content, &mut placemaker).unwrap();
+    });
 
     let mut display = TerminalDisplay::new();
     let mut window = display.best_window(0, 0);
