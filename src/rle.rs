@@ -1,5 +1,16 @@
 #[cfg(test)]
 mod tests {
+    #[derive(Debug)]
+    struct FakeStorage {
+        cells: Vec<Coord>,
+    }
+
+    impl LifePlaceMaker for FakeStorage {
+        fn make_cell_alive(&mut self, coord: Coord) {
+            self.cells.push(coord);
+        }
+    }
+
     use super::*;
 
     #[test]
@@ -82,17 +93,6 @@ pub struct LreLife {
     y: i32,
 }
 
-#[derive(Debug)]
-struct FakeStorage {
-    cells: Vec<Coord>,
-}
-
-impl LifePlaceMaker for FakeStorage {
-    fn make_cell_alive(&mut self, coord: Coord) {
-        self.cells.push(coord);
-    }
-}
-
 fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (i32, i32) {
     let mut inner = pair.into_inner();
 
@@ -170,8 +170,8 @@ pub fn parse(
     let node = inner.next();
     let size = get_x_y(node.unwrap());
 
-    if let Some(node) = inner.next() {
-        get_body_contents(node, storage);
+    if let Some(body) = inner.next() {
+        get_body_contents(body, storage);
     }
 
     Ok(LreLife {

@@ -8,10 +8,7 @@ struct WorldLifePlaceMaker<'a> {
 
 impl<'a> WorldLifePlaceMaker<'a> {
     fn new(position: Coord, world: &'a mut World) -> WorldLifePlaceMaker<'a> {
-        WorldLifePlaceMaker {
-            position: position,
-            world: world,
-        }
+        WorldLifePlaceMaker { position, world }
     }
 }
 

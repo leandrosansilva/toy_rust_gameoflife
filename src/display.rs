@@ -22,7 +22,7 @@ impl<'stdout> TerminalDisplay<'stdout> {
     }
 
     fn clear(&self) {
-        self.terminal.clear(crossterm::terminal::ClearType::All);
+        let _ = self.terminal.clear(crossterm::terminal::ClearType::All);
     }
 
     pub fn best_window(&self, x: i64, y: i64) -> world::Window {
@@ -64,12 +64,12 @@ impl<'stdout> WorldDisplay for TerminalDisplay<'stdout> {
             cells.iter().for_each(|c| {
                 let actual_x = c.0 - x;
                 let actual_y = c.1 - y;
-                cursor.goto(actual_x as u16, actual_y as u16);
+                let _ = cursor.goto(actual_x as u16, actual_y as u16);
                 print!("@");
             });
         }
 
-        self.cursor.goto(0, 0);
+        let _ = self.cursor.goto(0, 0);
         println!(
             "x: {}, y: {}, w: {}, h: {}",
             window.x, window.y, window.w, window.h
