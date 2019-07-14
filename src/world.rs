@@ -273,6 +273,10 @@ impl InterestingCells {
         self.dead.clear();
     }
 
+    fn len(&self) -> usize {
+        self.alive.len()
+    }
+
     fn evolve_into(&self, e: &mut InterestingCells) {
         e.clear();
 
@@ -367,6 +371,10 @@ impl World {
         let working_sets = self.working_sets();
         working_sets.0.evolve_into(working_sets.1);
         self.swap_sets();
+    }
+
+    pub fn population_size(&self) -> usize {
+        self.current_set().len()
     }
 
     // FIXME: this method is very unoptimized

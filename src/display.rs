@@ -3,7 +3,7 @@ extern crate crossterm;
 use super::world;
 
 pub trait WorldDisplay {
-    fn display(&mut self, cells: &[world::Coord], window: &mut world::Window);
+    fn display(&mut self, cells: &[world::Coord], window: &mut world::Window, world: &world::World);
 }
 
 pub struct TerminalDisplay<'stdout> {
@@ -52,7 +52,12 @@ impl<'stdout> TerminalDisplay<'stdout> {
 }
 
 impl<'stdout> WorldDisplay for TerminalDisplay<'stdout> {
-    fn display(&mut self, cells: &[world::Coord], window: &mut world::Window) {
+    fn display(
+        &mut self,
+        cells: &[world::Coord],
+        window: &mut world::Window,
+        world: &world::World,
+    ) {
         self.clear();
 
         let x = window.x;
@@ -71,8 +76,10 @@ impl<'stdout> WorldDisplay for TerminalDisplay<'stdout> {
 
         let _ = self.cursor.goto(0, 0);
         println!(
-            "x: {}, y: {}, w: {}, h: {}",
-            window.x, window.y, window.w, window.h
+            "x: {}, y: {}, population: {}",
+            window.x,
+            window.y,
+            world.population_size()
         );
     }
 }

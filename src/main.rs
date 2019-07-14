@@ -44,7 +44,7 @@ fn main() {
     loop {
         cells.clear();
         world.live_cells(&window, &mut cells);
-        display.display(&cells, &mut window);
+        display.display(&cells, &mut window, &world);
         world.evolve();
         display.update_window(&mut window);
         //println!("Generation {}", i);
