@@ -313,6 +313,7 @@ pub struct World {
     set1: InterestingCells,
     set2: InterestingCells,
     using_set1: bool,
+    generation: usize,
 }
 
 pub trait CellStorage {
@@ -331,6 +332,7 @@ impl World {
             set1: InterestingCells::new(),
             set2: InterestingCells::new(),
             using_set1: true,
+            generation: 0,
         }
     }
 
@@ -371,10 +373,15 @@ impl World {
         let working_sets = self.working_sets();
         working_sets.0.evolve_into(working_sets.1);
         self.swap_sets();
+        self.generation += 1;
     }
 
     pub fn population_size(&self) -> usize {
         self.current_set().len()
+    }
+
+    pub fn gen(&self) -> usize {
+        self.generation
     }
 
     // FIXME: this method is very unoptimized

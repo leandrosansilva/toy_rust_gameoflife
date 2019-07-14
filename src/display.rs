@@ -76,10 +76,11 @@ impl<'stdout> WorldDisplay for TerminalDisplay<'stdout> {
 
         let _ = self.cursor.goto(0, 0);
         println!(
-            "x: {}, y: {}, population: {}",
+            "x: {}, y: {}, population: {}, gen: {}",
             window.x,
             window.y,
-            world.population_size()
+            world.population_size(),
+            world.gen()
         );
     }
 }
