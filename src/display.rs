@@ -1,6 +1,7 @@
 extern crate crossterm;
 
 use super::world;
+use crate::common;
 
 pub trait WorldDisplay {
     fn display(&mut self, cells: &[world::Coord], window: &mut world::Window, world: &world::World);
@@ -25,7 +26,7 @@ impl<'stdout> TerminalDisplay<'stdout> {
         let _ = self.terminal.clear(crossterm::terminal::ClearType::All);
     }
 
-    pub fn best_window(&self, x: i64, y: i64) -> world::Window {
+    pub fn best_window(&self, x: common::Int, y: common::Int) -> world::Window {
         let (w, h) = self.terminal.terminal_size();
         world::Window::new(x, y, w as usize, h as usize)
     }

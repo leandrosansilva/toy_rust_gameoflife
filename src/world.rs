@@ -1,3 +1,4 @@
+use crate::common;
 use rayon::prelude::*;
 
 #[cfg(test)]
@@ -210,7 +211,7 @@ mod tests {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy)]
-pub struct Coord(pub i64, pub i64);
+pub struct Coord(pub common::Int, pub common::Int);
 
 pub type Coords = std::vec::Vec<Coord>;
 
@@ -299,12 +300,12 @@ impl InterestingCells {
 pub struct Window {
     pub w: usize,
     pub h: usize,
-    pub x: i64,
-    pub y: i64,
+    pub x: common::Int,
+    pub y: common::Int,
 }
 
 impl Window {
-    pub fn new(x: i64, y: i64, w: usize, h: usize) -> Self {
+    pub fn new(x: common::Int, y: common::Int, w: usize, h: usize) -> Self {
         Window { w, h, x, y }
     }
 }
@@ -395,8 +396,8 @@ impl World {
 
         let lower_index = find_index(Coord(window.x - 1, window.y));
         let upper_index = find_index(Coord(
-            window.x + window.w as i64,
-            window.y + window.h as i64 + 1,
+            window.x + window.w as common::Int,
+            window.y + window.h as common::Int + 1,
         ));
 
         assert!(lower_index <= upper_index);
@@ -407,9 +408,9 @@ impl World {
             .iter()
             .filter(|c| {
                 (c.0 >= window.x)
-                    && (c.0 < window.x + window.w as i64)
+                    && (c.0 < window.x + window.w as common::Int)
                     && (c.1 >= window.y)
-                    && (c.1 < window.y + window.h as i64)
+                    && (c.1 < window.y + window.h as common::Int)
             })
             .for_each(|c| {
                 cells.add_cell(*c);

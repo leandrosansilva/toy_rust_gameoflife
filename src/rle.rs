@@ -1,3 +1,5 @@
+use crate::common;
+
 #[cfg(test)]
 mod tests {
     #[derive(Debug)]
@@ -89,11 +91,11 @@ use pest_derive::*;
 struct LreFile;
 
 pub struct LreLife {
-    x: i32,
-    y: i32,
+    x: common::Int,
+    y: common::Int,
 }
 
-fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (i32, i32) {
+fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (common::Int, common::Int) {
     let mut inner = pair.into_inner();
 
     let mut number_from_node = || {
@@ -110,8 +112,8 @@ fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (i32, i32) {
 fn get_body_contents(node: pest::iterators::Pair<Rule>, storage: &mut LifePlaceMaker) {
     let patterns = node.into_inner().next().unwrap().into_inner();
 
-    let mut line = 0i64;
-    let mut column = 0i64;
+    let mut line: common::Int = 0;
+    let mut column: common::Int = 0;
 
     // TODO: refactor this loop and all those nested blocks to their own functions!
     for pattern in patterns {
@@ -123,13 +125,13 @@ fn get_body_contents(node: pest::iterators::Pair<Rule>, storage: &mut LifePlaceM
                 }
 
                 Rule::DeadOrAlive => {
-                    let mut run_count = 1i64;
+                    let mut run_count: common::Int = 1;
                     let mut should_add = false;
 
                     for component in pattern_type.into_inner() {
                         match component.as_rule() {
                             Rule::RunCount => {
-                                run_count = component.as_str().parse::<i64>().unwrap();
+                                run_count = component.as_str().parse::<common::Int>().unwrap();
                             }
                             Rule::Tag => {
                                 if component.into_inner().next().unwrap().as_rule()
