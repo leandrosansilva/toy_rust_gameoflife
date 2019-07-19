@@ -215,6 +215,10 @@ pub struct Coord(pub common::Int, pub common::Int);
 
 pub type Coords = std::vec::Vec<Coord>;
 
+//struct Neighboors {
+//
+//}
+
 type Neighboors = smallvec::SmallVec<[Coord; 8]>;
 
 struct InterestingCells {
@@ -228,7 +232,6 @@ fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
 
 impl InterestingCells {
     fn live_neighboors(&self, c: Coord) -> Neighboors {
-        // TODO: this filtering can be done in parallel
         neighboors(c)
             .into_iter()
             .filter(|c| self.alive.binary_search(c).is_ok())
@@ -247,7 +250,10 @@ impl InterestingCells {
         let mut dead = &mut self.dead;
         alive
             .iter()
-            .for_each(|c| neighboors_to_dead_list(*c, &mut dead))
+            .for_each(|c| neighboors_to_dead_list(*c, &mut dead));
+
+        // what I have to do here is to extend `dead` with all the new live
+        // cells created from `alive`. This can in theory be done in parallel
     }
 
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
@@ -262,7 +268,6 @@ impl InterestingCells {
         let alive = &mut self.alive;
 
         alive.par_sort_unstable();
-        alive.dedup();
 
         dead.par_sort_unstable();
         dead.dedup();
@@ -287,6 +292,7 @@ impl InterestingCells {
         e.alive.par_extend(alive.into_par_iter().filter(|c| {
             mutate(CellState::Alive, self.live_neighboors(**c).len()) == CellState::Alive
         }));
+
         e.alive.par_extend(dead.into_par_iter().filter(|c| {
             mutate(CellState::Dead, self.live_neighboors(**c).len()) == CellState::Alive
         }));

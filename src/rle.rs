@@ -100,7 +100,7 @@ fn get_x_y(pair: pest::iterators::Pair<Rule>) -> (common::Int, common::Int) {
 
     let mut number_from_node = || {
         let node = inner.next();
-        node.unwrap().as_str().parse::<i32>().unwrap()
+        node.unwrap().as_str().parse::<common::Int>().unwrap()
     };
 
     let x = number_from_node();
