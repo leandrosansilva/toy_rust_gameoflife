@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn cell_neighbours() {
-        let expected: Neighboors = smallvec![
+        let expected = vec![
             Coord(-1, -1),
             Coord(0, -1),
             Coord(1, -1),
@@ -52,7 +52,7 @@ mod tests {
             Coord(-1, 0),
         ];
 
-        assert_eq!(neighboors(Coord(0, 0)), expected);
+        assert_eq!(neighboors(Coord(0, 0)).collect::<Vec<_>>(), expected);
     }
 
     #[test]
@@ -63,7 +63,7 @@ mod tests {
         let n = ic.live_neighboors(Coord(0, 0));
 
         assert_eq!(ic.dead.len(), 0);
-        assert_eq!(n.len(), 0);
+        assert_eq!(n.count(), 0);
     }
 
     #[test]
@@ -75,7 +75,7 @@ mod tests {
         let n = ic.live_neighboors(Coord(0, 0));
 
         assert_eq!(ic.dead.len(), 8);
-        assert_eq!(n.len(), 0);
+        assert_eq!(n.count(), 0);
     }
 
     #[test]
@@ -86,9 +86,9 @@ mod tests {
 
         ic.finish();
 
-        let n = ic.live_neighboors(Coord(0, 0));
+        let n = ic.live_neighboors(Coord(0, 0)).collect::<Vec<_>>();
 
-        let expected: Neighboors = smallvec![Coord(1, 1)];
+        let expected = vec![Coord(1, 1)];
 
         assert_eq!(ic.dead.len(), 12);
         assert_eq!(n, expected);
@@ -215,11 +215,46 @@ pub struct Coord(pub common::Int, pub common::Int);
 
 pub type Coords = std::vec::Vec<Coord>;
 
-//struct Neighboors {
-//
-//}
+#[derive(Debug, Clone)]
+struct CoordIter {
+    c: Coord,
+    x: common::Int,
+    y: common::Int,
+}
 
-type Neighboors = smallvec::SmallVec<[Coord; 8]>;
+impl CoordIter {
+    fn empty(c: Coord) -> Self {
+        Self { c, x: 2, y: 2 }
+    }
+
+    fn new(c: Coord, x: common::Int, y: common::Int) -> Self {
+        Self { c, x, y }
+    }
+}
+
+impl std::iter::Iterator for CoordIter {
+    type Item = Coord;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let (x, y) = match (self.x, self.y) {
+            (2, 2) => (-1, -1),
+            (-1, -1) => (0, -1),
+            (0, -1) => (1, -1),
+            (1, -1) => (1, 0),
+            (1, 0) => (1, 1),
+            (1, 1) => (0, 1),
+            (0, 1) => (-1, 1),
+            (-1, 1) => (-1, 0),
+            (-1, 0) => return None,
+            _ => unreachable!(),
+        };
+
+        self.x = x;
+        self.y = y;
+
+        Some(Coord(self.c.0 + self.x, self.c.1 + self.y))
+    }
+}
 
 struct InterestingCells {
     alive: Coords,
@@ -227,15 +262,12 @@ struct InterestingCells {
 }
 
 fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
-    neighboors(c).into_iter().for_each(|n| dead.push(n));
+    neighboors(c).for_each(|n| dead.push(n));
 }
 
 impl InterestingCells {
-    fn live_neighboors(&self, c: Coord) -> Neighboors {
-        neighboors(c)
-            .into_iter()
-            .filter(|c| self.alive.binary_search(c).is_ok())
-            .collect()
+    fn live_neighboors<'a>(&'a self, c: Coord) -> impl Iterator<Item = Coord> + 'a {
+        neighboors(c).filter(move |c| self.alive.binary_search(c).is_ok())
     }
 
     fn new() -> Self {
@@ -290,11 +322,11 @@ impl InterestingCells {
         let dead = &self.dead;
 
         e.alive.par_extend(alive.into_par_iter().filter(|c| {
-            mutate(CellState::Alive, self.live_neighboors(**c).len()) == CellState::Alive
+            mutate(CellState::Alive, self.live_neighboors(**c).count()) == CellState::Alive
         }));
 
         e.alive.par_extend(dead.into_par_iter().filter(|c| {
-            mutate(CellState::Dead, self.live_neighboors(**c).len()) == CellState::Alive
+            mutate(CellState::Dead, self.live_neighboors(**c).count()) == CellState::Alive
         }));
 
         e.build_dead_neighboors_from_alive();
@@ -443,15 +475,6 @@ fn mutate(state: CellState, neighboors: usize) -> CellState {
     }
 }
 
-fn neighboors(c: Coord) -> Neighboors {
-    smallvec![
-        Coord(c.0 - 1, c.1 - 1),
-        Coord(c.0, c.1 - 1),
-        Coord(c.0 + 1, c.1 - 1),
-        Coord(c.0 + 1, c.1),
-        Coord(c.0 + 1, c.1 + 1),
-        Coord(c.0, c.1 + 1),
-        Coord(c.0 - 1, c.1 + 1),
-        Coord(c.0 - 1, c.1)
-    ]
+fn neighboors(c: Coord) -> CoordIter {
+    CoordIter::empty(c)
 }

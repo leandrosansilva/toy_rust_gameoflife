@@ -1,5 +1,5 @@
 use crate::rle;
-use crate::world::{World,Coord};
+use crate::world::{Coord, World};
 
 pub struct WorldLifePlaceMaker<'a> {
     position: Coord,
@@ -18,4 +18,3 @@ impl<'a> rle::LifePlaceMaker for WorldLifePlaceMaker<'a> {
             .make_alive(Coord(self.position.0 + coord.0, self.position.1 + coord.1));
     }
 }
-

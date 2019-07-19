@@ -1,6 +1,6 @@
 use gameoflife::rle;
-use gameoflife::world::{World, Coord, Coords};
-use gameoflife::utils::{WorldLifePlaceMaker};
+use gameoflife::utils::WorldLifePlaceMaker;
+use gameoflife::world::{Coord, Coords, World};
 
 fn main() {
     use gameoflife::display::*;
