@@ -52,7 +52,7 @@ mod tests {
             Coord(-1, 0),
         ];
 
-        assert_eq!(neighboors(Coord(0, 0)).collect::<Vec<_>>(), expected);
+        assert_eq!(neighboors(Coord(0, 0)).iter().collect::<Vec<_>>(), expected);
     }
 
     #[test]
@@ -215,19 +215,29 @@ pub struct Coord(pub common::Int, pub common::Int);
 
 pub type Coords = std::vec::Vec<Coord>;
 
+struct Neighbboors {
+    c: Coord,
+}
+
+impl Neighbboors {
+    fn iter(&self) -> NeighboorIter {
+        NeighboorIter::empty(self.c)
+    }
+}
+
 #[derive(Debug, Clone)]
-struct CoordIter {
+struct NeighboorIter {
     c: Coord,
     i: usize,
 }
 
-impl CoordIter {
+impl NeighboorIter {
     fn empty(c: Coord) -> Self {
         Self { c, i: 0 }
     }
 }
 
-impl std::iter::Iterator for CoordIter {
+impl std::iter::Iterator for NeighboorIter {
     type Item = Coord;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -256,19 +266,16 @@ impl std::iter::Iterator for CoordIter {
         ))
     }
 }
-
 struct InterestingCells {
     alive: Coords,
     dead: Coords,
 }
 
-fn neighboors_to_dead_list(c: Coord, dead: &mut Coords) {
-    neighboors(c).for_each(|n| dead.push(n));
-}
-
 impl InterestingCells {
     fn live_neighboors<'a>(&'a self, c: Coord) -> impl Iterator<Item = Coord> + 'a {
-        neighboors(c).filter(move |c| self.alive.binary_search(c).is_ok())
+        neighboors(c)
+            .iter()
+            .filter(move |c| self.alive.binary_search(c).is_ok())
     }
 
     fn new() -> Self {
@@ -278,25 +285,13 @@ impl InterestingCells {
         }
     }
 
-    fn build_dead_neighboors_from_alive(&mut self) {
-        let alive = &self.alive;
-        let mut dead = &mut self.dead;
-        alive
-            .iter()
-            .for_each(|c| neighboors_to_dead_list(*c, &mut dead));
-
-        // what I have to do here is to extend `dead` with all the new live
-        // cells created from `alive`. This can in theory be done in parallel
-    }
-
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
-        neighboors_to_dead_list(c, &mut self.dead);
+        neighboors(c).iter().for_each(|c| self.dead.push(c));
         self.alive.push(c);
         self
     }
 
     fn finish(&mut self) {
-        // TODO: refactor this!!!
         let dead = &mut self.dead;
         let alive = &mut self.alive;
 
@@ -307,17 +302,13 @@ impl InterestingCells {
         dead.retain(|c| alive.binary_search(c).is_err());
     }
 
-    fn clear(&mut self) {
-        self.alive.clear();
-        self.dead.clear();
-    }
-
     fn len(&self) -> usize {
         self.alive.len()
     }
 
     fn evolve_into(&self, e: &mut InterestingCells) {
-        e.clear();
+        e.alive.clear();
+        e.dead.clear();
 
         let alive = &self.alive;
         let dead = &self.dead;
@@ -330,9 +321,16 @@ impl InterestingCells {
             mutate(CellState::Dead, self.live_neighboors(**c).count()) == CellState::Alive
         }));
 
-        e.build_dead_neighboors_from_alive();
+        e.alive.par_sort_unstable();
 
-        e.finish();
+        for c in e.alive.iter().flat_map(|c| neighboors(*c).iter()) {
+            if e.alive.binary_search(&c).is_err() {
+                e.dead.push(c);
+            }
+        }
+
+        e.dead.par_sort_unstable();
+        e.dead.dedup();
     }
 }
 
@@ -476,6 +474,6 @@ fn mutate(state: CellState, neighboors: usize) -> CellState {
     }
 }
 
-fn neighboors(c: Coord) -> CoordIter {
-    CoordIter::empty(c)
+fn neighboors(c: Coord) -> Neighbboors {
+    Neighbboors { c }
 }
