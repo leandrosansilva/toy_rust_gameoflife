@@ -218,17 +218,12 @@ pub type Coords = std::vec::Vec<Coord>;
 #[derive(Debug, Clone)]
 struct CoordIter {
     c: Coord,
-    x: common::Int,
-    y: common::Int,
+    i: usize,
 }
 
 impl CoordIter {
     fn empty(c: Coord) -> Self {
-        Self { c, x: 2, y: 2 }
-    }
-
-    fn new(c: Coord, x: common::Int, y: common::Int) -> Self {
-        Self { c, x, y }
+        Self { c, i: 0 }
     }
 }
 
@@ -236,23 +231,29 @@ impl std::iter::Iterator for CoordIter {
     type Item = Coord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (x, y) = match (self.x, self.y) {
-            (2, 2) => (-1, -1),
-            (-1, -1) => (0, -1),
-            (0, -1) => (1, -1),
-            (1, -1) => (1, 0),
-            (1, 0) => (1, 1),
-            (1, 1) => (0, 1),
-            (0, 1) => (-1, 1),
-            (-1, 1) => (-1, 0),
-            (-1, 0) => return None,
-            _ => unreachable!(),
-        };
+        if self.i == 8 {
+            return None;
+        }
 
-        self.x = x;
-        self.y = y;
+        let n: [(i8, i8); 8] = [
+            (-1, -1),
+            (0, -1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+            (0, 1),
+            (-1, 1),
+            (-1, 0),
+        ];
 
-        Some(Coord(self.c.0 + self.x, self.c.1 + self.y))
+        let p = n[self.i];
+
+        self.i += 1;
+
+        Some(Coord(
+            self.c.0 + p.0 as common::Int,
+            self.c.1 + p.1 as common::Int,
+        ))
     }
 }
 
