@@ -286,12 +286,12 @@ impl InterestingCells {
     }
 
     fn make_alive(&mut self, c: Coord) -> &mut InterestingCells {
-        neighboors(c).iter().for_each(|c| self.dead.push(c));
         self.alive.push(c);
         self
     }
 
     fn finish(&mut self) {
+        self.make_dead_from_alive();
         let dead = &mut self.dead;
         let alive = &mut self.alive;
 
@@ -304,6 +304,20 @@ impl InterestingCells {
 
     fn len(&self) -> usize {
         self.alive.len()
+    }
+
+    fn make_dead_from_alive(&mut self) {
+        let alive = &self.alive;
+        let dead = &mut self.dead;
+
+        dead.extend(alive.iter().flat_map(|c| {
+            neighboors(*c)
+                .iter()
+                .filter(|c| alive.binary_search(c).is_err())
+        }));
+
+        dead.par_sort_unstable();
+        dead.dedup();
     }
 
     fn evolve_into(&self, e: &mut InterestingCells) {
@@ -323,14 +337,7 @@ impl InterestingCells {
 
         e.alive.par_sort_unstable();
 
-        for c in e.alive.iter().flat_map(|c| neighboors(*c).iter()) {
-            if e.alive.binary_search(&c).is_err() {
-                e.dead.push(c);
-            }
-        }
-
-        e.dead.par_sort_unstable();
-        e.dead.dedup();
+        e.make_dead_from_alive();
     }
 }
 
